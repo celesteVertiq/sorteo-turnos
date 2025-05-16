@@ -212,28 +212,11 @@
 
   // Confeti simplificado que no deja residuos
   function launchConfetti() {
-    const duration = 1000;
-    const animationEnd = Date.now() + duration;
-    const defaults = {
-      origin: { y: 0.6 },
-      particleCount: 50,
-      spread: 55,
-      ticks: 50,
-    };
-
-    (function frame() {
-      confetti({
-        ...defaults,
-        particleCount: 5,
-        startVelocity: 30,
-        colors: ['#d62828', '#f77f00', '#fcbf49', '#2a9d8f', '#264653'],
-        shapes: ['circle'],
-        gravity: 0.5,
-      });
-      if (Date.now() < animationEnd) {
-        requestAnimationFrame(frame);
-      }
-    })();
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
   }
 
   // Función para girar la ruleta y elegir un ganador
