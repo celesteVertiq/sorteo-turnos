@@ -188,39 +188,47 @@
       return `hsl(${hue}, 70%, 70%)`;
     }
 
-    function drawRoulette(highlightName = null) {
-      const canvas = document.getElementById("rouletteCanvas");
-      const ctx = canvas.getContext("2d");
-      const filtered = names.filter(n => !chosen.includes(n));
-      const total = filtered.length;
+  function drawRoulette(highlightName = null) {
+    const canvas = document.getElementById("rouletteCanvas");
+    const ctx = canvas.getContext("2d");
+    const filtered = names.filter(n => !chosen.includes(n));
+    const total = filtered.length;
+  
+    // LIMPIA todo el canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.beginPath();
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+    if (total === 0) return;
+  
+    const radius = canvas.width / 2;
+    const center = { x: radius, y: radius };
+    const angleStep = (2 * Math.PI) / total;
+  
+    filtered.forEach((name, i) => {
+      const angle = i * angleStep;
+      ctx.beginPath();
+      ctx.moveTo(center.x, center.y);
+      ctx.arc(center.x, center.y, radius, angle, angle + angleStep);
+      ctx.closePath();
+      ctx.fillStyle = getColor(i, total);
+      ctx.fill();
+      ctx.strokeStyle = "#fff";
+      ctx.stroke();
+  
+      // Texto
+      ctx.save();
+      ctx.translate(center.x, center.y);
+      ctx.rotate(angle + angleStep / 2);
+      ctx.textAlign = "right";
+      ctx.fillStyle = name === highlightName ? "red" : "#000";
+      ctx.font = "bold 18px sans-serif";
+      ctx.fillText(name, radius - 20, 8);
+      ctx.restore();
+    });
+  }
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      if (total === 0) return;
-
-      const radius = canvas.width / 2;
-      const center = { x: radius, y: radius };
-      const angleStep = (2 * Math.PI) / total;
-
-      filtered.forEach((name, i) => {
-        const angle = i * angleStep;
-        ctx.beginPath();
-        ctx.moveTo(center.x, center.y);
-        ctx.arc(center.x, center.y, radius, angle, angle + angleStep);
-        ctx.fillStyle = getColor(i, total);
-        ctx.fill();
-        ctx.stroke();
-
-        // Texto
-        ctx.save();
-        ctx.translate(center.x, center.y);
-        ctx.rotate(angle + angleStep / 2);
-        ctx.textAlign = "right";
-        ctx.fillStyle = name === highlightName ? "red" : "#000";
-        ctx.font = "bold 18px sans-serif";
-        ctx.fillText(name, radius - 20, 8);
-        ctx.restore();
-      });
-    }
 
     function spinRoulette() {
       const available = names.filter(n => !chosen.includes(n));
