@@ -254,29 +254,31 @@
     }
 
 
-    function launchConfetti() {
-      const duration = 1 * 1000;
-      const end = Date.now() + duration;
+function launchConfetti() {
+  const duration = 1000; // 1 segundo de confeti
+  const animationEnd = Date.now() + duration;
+  const defaults = { 
+    origin: { y: 0.6 },
+    particleCount: 50,
+    spread: 55,
+    ticks: 50,
+  };
 
-      (function frame() {
-        confetti({
-          particleCount: 5,
-          angle: 60,
-          spread: 55,
-          origin: { x: 0 },
-        });
-        confetti({
-          particleCount: 5,
-          angle: 120,
-          spread: 55,
-          origin: { x: 1 },
-        });
-
-        if (Date.now() < end) {
-          requestAnimationFrame(frame);
-        }
-      })();
+  (function frame() {
+    confetti({
+      ...defaults,
+      particleCount: 5,
+      startVelocity: 30,
+      colors: ['#bb0000', '#ffffff'],
+      shapes: ['circle'],
+      gravity: 0.5,
+    });
+    if (Date.now() < animationEnd) {
+      requestAnimationFrame(frame);
     }
+  })();
+}
+
 
     function showWinnerPopup(name) {
       document.getElementById("winnerName").textContent = name;
