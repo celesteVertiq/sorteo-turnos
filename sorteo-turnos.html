@@ -1,211 +1,190 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>Ruleta de Turnos</title>
-  <style>
-    :root {
-      --primary: #4CAF50;
-      --bg: #f9f9f9;
-      --card-bg: #ffffff;
-      --accent: #3f51b5;
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ruleta de Sorteo</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f0f4f8;
+    margin: 0; padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    flex-direction: column;
+  }
+  #container {
+    display: flex;
+    gap: 40px;
+    align-items: center;
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgb(0 0 0 / 0.1);
+  }
+  #listContainer {
+    max-width: 200px;
+  }
+  #listContainer h2 {
+    margin-top: 0;
+    color: #333;
+    text-align: center;
+  }
+  #namesList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  #namesList li {
+    padding: 8px 12px;
+    margin: 6px 0;
+    background: #dde6f3;
+    border-radius: 8px;
+    font-weight: 600;
+    color: #222;
+  }
+  #namesList li.chosen {
+    background: #a0d468;
+    color: #fff;
+    font-weight: 700;
+  }
+  #rouletteCanvas {
+    border-radius: 50%;
+    box-shadow: 0 4px 15px rgb(0 0 0 / 0.15);
+    cursor: pointer;
+  }
+  #spinButton {
+    margin-top: 20px;
+    width: 100%;
+    padding: 10px 0;
+    background: #3366ff;
+    color: white;
+    font-weight: 700;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    user-select: none;
+  }
+  #spinButton:hover {
+    background: #254eda;
+  }
 
-    body {
-      margin: 0;
-      padding: 20px;
-      font-family: 'Segoe UI', sans-serif;
-      background-color: var(--bg);
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      align-items: flex-start;
-      gap: 40px;
-    }
-
-    .card {
-      background: var(--card-bg);
-      padding: 20px 30px;
-      border-radius: 16px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-      max-width: 340px;
-    }
-
-    h2, h3 {
-      margin-top: 0;
-      color: var(--accent);
-    }
-
-    input[type="number"], input[type="text"] {
-      width: 100%;
-      padding: 8px;
-      margin: 6px 0;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      box-sizing: border-box;
-    }
-
-    button {
-      margin-top: 10px;
-      padding: 10px 16px;
-      font-size: 1em;
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-
-    button:hover {
-      background: #388e3c;
-    }
-
-    #chosenList {
-      margin-top: 10px;
-      padding-left: 20px;
-    }
-
-    canvas {
-      border: 2px solid #ddd;
-      background: #fff;
-      border-radius: 50%;
-    }
-
-    /* Popup */
-    #winnerPopup {
-      display: none;
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.6);
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-    }
-
-    #winnerPopupContent {
-      background: white;
-      padding: 40px;
-      border-radius: 20px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-      text-align: center;
-      animation: popup 0.3s ease-out;
-    }
-
-    #winnerPopup h1 {
-      font-size: 2.5em;
-      margin-bottom: 20px;
-      color: var(--accent);
-    }
-
-    @keyframes popup {
-      from { transform: scale(0.8); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
-    }
-  </style>
+  /* Popup ganador */
+  #winnerPopup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #3366ff;
+    color: white;
+    padding: 30px 40px;
+    border-radius: 15px;
+    box-shadow: 0 8px 30px rgb(51 102 255 / 0.7);
+    display: none;
+    z-index: 1000;
+    text-align: center;
+    user-select: none;
+  }
+  #winnerPopup h2 {
+    margin: 0 0 20px 0;
+    font-size: 28px;
+  }
+  #closeWinner {
+    background: white;
+    color: #3366ff;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.25s ease;
+  }
+  #closeWinner:hover {
+    background: #e6e6e6;
+  }
+</style>
 </head>
 <body>
-  <div class="card">
-    <h2>Configuración</h2>
-    <label for="count">Cantidad de personas:</label>
-    <input type="number" id="count" min="2" max="30" value="10" />
-    <button onclick="loadNames()">Cargar nombres</button>
-    <div id="inputs"></div>
-    <button onclick="saveNames()">Guardar nombres</button>
-    <button onclick="spinRoulette()">Sortear</button>
 
-    <h3>Ya sorteados:</h3>
-    <ul id="chosenList"></ul>
+<div id="container">
+  <div id="listContainer">
+    <h2>Participantes</h2>
+    <ul id="namesList"></ul>
+    <button id="spinButton">Girar Ruleta</button>
   </div>
+  <canvas id="rouletteCanvas" width="450" height="450" title="Ruleta de participantes"></canvas>
+</div>
 
-  <canvas id="rouletteCanvas" width="500" height="500"></canvas>
+<div id="winnerPopup">
+  <h2>¡Ganador!</h2>
+  <div id="winnerName" style="font-size: 36px; font-weight: 900; margin-bottom: 20px;"></div>
+  <button id="closeWinner">Cerrar</button>
+</div>
 
-  <!-- Popup -->
-  <div id="winnerPopup">
-    <div id="winnerPopupContent">
-      <h1 id="winnerName">Ganador</h1>
-      <button onclick="closeWinnerPopup()">Cerrar</button>
-    </div>
-  </div>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+<script>
+  // Lista de nombres (puedes editar aquí)
+  const names = [
+    "Ana", "Carlos", "Luis", "María", "Jorge",
+    "Sofía", "Pedro", "Lucía", "Miguel", "Elena"
+  ];
+  const chosen = [];
+  let currentHighlightedName = null;
 
-  <script>
-    let currentHighlightedName = null;
-    let names = [];
-    let chosen = [];
+  // Referencias DOM
+  const namesList = document.getElementById('namesList');
+  const spinButton = document.getElementById('spinButton');
+  const winnerPopup = document.getElementById('winnerPopup');
+  const winnerNameDiv = document.getElementById('winnerName');
+  const closeWinnerBtn = document.getElementById('closeWinner');
+  const canvas = document.getElementById('rouletteCanvas');
+  const ctx = canvas.getContext('2d');
 
-    function loadNames() {
-      const count = parseInt(document.getElementById("count").value);
-      const inputsDiv = document.getElementById("inputs");
-      inputsDiv.innerHTML = "";
-      names = [];
+  // Pintar lista de nombres, marca los ya elegidos
+  function renderNamesList() {
+    namesList.innerHTML = '';
+    names.forEach(name => {
+      const li = document.createElement('li');
+      li.textContent = name;
+      if (chosen.includes(name)) li.classList.add('chosen');
+      namesList.appendChild(li);
+    });
+  }
 
-      const stored = localStorage.getItem("rouletteNames_" + count);
-      let savedNames = stored ? JSON.parse(stored) : [];
+  // Colores distintos para cada segmento
+  function getColor(i, total) {
+    const hue = (i * 360 / total) % 360;
+    return `hsl(${hue}, 70%, 65%)`;
+  }
 
-      for (let i = 0; i < count; i++) {
-        const input = document.createElement("input");
-        input.type = "text";
-        input.placeholder = "Nombre " + (i + 1);
-        input.value = savedNames[i] || "";
-        input.dataset.index = i;
-        input.oninput = () => {
-          names[i] = input.value.trim();
-          drawRoulette();
-        };
-        inputsDiv.appendChild(input);
-        names.push(input.value.trim());
-      }
-
-      chosen = [];
-      updateChosenList();
-      drawRoulette();
-    }
-
-    function saveNames() {
-      const count = parseInt(document.getElementById("count").value);
-      const filledNames = names.filter(n => n.trim().length > 0);
-      if (filledNames.length < count) {
-        alert("Completá todos los nombres antes de guardar.");
-        return;
-      }
-      localStorage.setItem("rouletteNames_" + count, JSON.stringify(names));
-      alert("Nombres guardados.");
-      drawRoulette();
-    }
-
-    function updateChosenList() {
-      const list = document.getElementById("chosenList");
-      list.innerHTML = "";
-      chosen.forEach(n => {
-        const li = document.createElement("li");
-        li.textContent = n;
-        list.appendChild(li);
-      });
-    }
-
-    function getColor(index, total) {
-      const hue = (index / total) * 360;
-      return `hsl(${hue}, 70%, 70%)`;
-    }
-
+  // Dibuja la ruleta
   function drawRoulette() {
-    const canvas = document.getElementById("rouletteCanvas");
-    const ctx = canvas.getContext("2d");
     const filtered = names.filter(n => !chosen.includes(n));
     const total = filtered.length;
-  
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Fondo blanco circular
     ctx.beginPath();
     ctx.fillStyle = "#fff";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  
-    if (total === 0) return;
-  
+    ctx.arc(canvas.width / 2, canvas.height / 2, canvas.width / 2, 0, 2 * Math.PI);
+    ctx.fill();
+
+    if (total === 0) {
+      // Si no quedan nombres, muestra mensaje
+      ctx.fillStyle = "#555";
+      ctx.font = "bold 24px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("No quedan participantes", canvas.width/2, canvas.height/2);
+      return;
+    }
+
     const radius = canvas.width / 2;
     const center = { x: radius, y: radius };
     const angleStep = (2 * Math.PI) / total;
-  
+
     filtered.forEach((name, i) => {
       const angle = i * angleStep;
       ctx.beginPath();
@@ -215,83 +194,82 @@
       ctx.fillStyle = getColor(i, total);
       ctx.fill();
       ctx.strokeStyle = "#fff";
+      ctx.lineWidth = 2;
       ctx.stroke();
-  
+
+      // Texto centrado en el sector
       ctx.save();
       ctx.translate(center.x, center.y);
       ctx.rotate(angle + angleStep / 2);
       ctx.textAlign = "right";
-      ctx.fillStyle = name === currentHighlightedName ? "red" : "#000";
-      ctx.font = "bold 18px sans-serif";
-      ctx.fillText(name, radius - 20, 8);
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = (name === currentHighlightedName) ? "#d62828" : "#222";
+      ctx.font = "bold 22px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+      ctx.fillText(name, radius - 25, 0);
       ctx.restore();
     });
   }
 
-function spinRoulette() {
-  const remaining = names.filter(n => !chosen.includes(n));
-  if (remaining.length === 0) {
-    alert("Ya se han seleccionado todos los participantes.");
-    return;
+  // Confeti simplificado que no deja residuos
+  function launchConfetti() {
+    const duration = 1000;
+    const animationEnd = Date.now() + duration;
+    const defaults = {
+      origin: { y: 0.6 },
+      particleCount: 50,
+      spread: 55,
+      ticks: 50,
+    };
+
+    (function frame() {
+      confetti({
+        ...defaults,
+        particleCount: 5,
+        startVelocity: 30,
+        colors: ['#d62828', '#f77f00', '#fcbf49', '#2a9d8f', '#264653'],
+        shapes: ['circle'],
+        gravity: 0.5,
+      });
+      if (Date.now() < animationEnd) {
+        requestAnimationFrame(frame);
+      }
+    })();
   }
 
-  const winner = remaining[Math.floor(Math.random() * remaining.length)];
-  chosen.push(winner);
+  // Función para girar la ruleta y elegir un ganador
+  function spinRoulette() {
+    const remaining = names.filter(n => !chosen.includes(n));
+    if (remaining.length === 0) {
+      alert("Ya se han seleccionado todos los participantes.");
+      return;
+    }
 
-  currentHighlightedName = winner;
+    const winner = remaining[Math.floor(Math.random() * remaining.length)];
+    chosen.push(winner);
+
+    currentHighlightedName = winner;
+    drawRoulette();
+
+    launchConfetti();
+
+    winnerNameDiv.textContent = winner;
+    winnerPopup.style.display = "block";
+  }
+
+  // Cerrar popup
+  function closeWinnerPopup() {
+    winnerPopup.style.display = "none";
+    currentHighlightedName = null;
+    drawRoulette();
+  }
+
+  // Eventos
+  spinButton.addEventListener('click', spinRoulette);
+  closeWinnerBtn.addEventListener('click', closeWinnerPopup);
+
+  // Inicializar
+  renderNamesList();
   drawRoulette();
-
-  launchConfetti();
-
-  document.getElementById("winnerName").textContent = winner;
-  document.getElementById("winnerPopup").style.display = "block";
-}
-
-function launchConfetti() {
-  const duration = 1000; // 1 segundo de confeti
-  const animationEnd = Date.now() + duration;
-  const defaults = { 
-    origin: { y: 0.6 },
-    particleCount: 50,
-    spread: 55,
-    ticks: 50,
-  };
-
-  (function frame() {
-    confetti({
-      ...defaults,
-      particleCount: 5,
-      startVelocity: 30,
-      colors: ['#bb0000', '#ffffff'],
-      shapes: ['circle'],
-      gravity: 0.5,
-    });
-    if (Date.now() < animationEnd) {
-      requestAnimationFrame(frame);
-    }
-  })();
-}
-
-
-    function showWinnerPopup(name) {
-      document.getElementById("winnerName").textContent = name;
-      document.getElementById("winnerPopup").style.display = "flex";
-    }
-
-    function closeWinnerPopup() {
-      document.getElementById("winnerPopup").style.display = "none";
-      currentHighlightedName = null; // Limpia el nombre resaltado
-      drawRoulette(); // Redibuja sin resaltar
-      // Detenemos el confeti si está corriendo
-      if (window.confettiInstance) {
-        window.confettiInstance.reset(); // Esto detiene los emitters
-      }
-    }
-
-    // Cargar confetti
-    const confettiScript = document.createElement("script");
-    confettiScript.src = "https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js";
-    document.body.appendChild(confettiScript);
-  </script>
+</script>
 </body>
 </html>
