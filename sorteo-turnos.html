@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Ruleta de Turnos</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 40px;
+      flex-wrap: wrap;
+    }
+    #config {
+      max-width: 300px;
+    }
+    #inputs {
+      margin-top: 10px;
+    }
+    #rouletteCanvas {
+      border: 2px solid #333;
+      background: #fafafa;
+    }
+    .highlight {
+      font-weight: bold;
+      color: green;
+    }
+    #chosenList li {
+      margin: 4px 0;
+    }
+    input[type="text"] {
+      width: 90%;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<!-- Popup ganador -->
+<div id="winnerPopup" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+  background:rgba(0,0,0,0.6); display:flex; justify-content:center; align-items:center; z-index:1000;">
+  <div style="background:white; padding:30px 40px; border-radius:16px; box-shadow:0 0 15px rgba(0,0,0,0.3); text-align:center; max-width:90%;">
+    <h1 id="winnerName" style="font-size:2.5em; margin-bottom:20px;"></h1>
+    <button onclick="closeWinnerPopup()" style="font-size:1.2em; padding:10px 20px; border:none; background:#4CAF50; color:white; border-radius:8px; cursor:pointer;">
+      Cerrar
+    </button>
+  </div>
+</div>
+<body>
+  <div id="config">
+    <h2>Configuración</h2>
+    <label for="count">Cantidad de personas:</label>
+    <input type="number" id="count" min="2" max="30" value="10" />
+    <button onclick="loadNames()">Cargar nombres</button>
+    <div id="inputs"></div>
+    <button onclick="saveNames()">Guardar nombres</button>
+    <button onclick="spinRoulette()">Sortear</button>
+
+    <h3>Ya sorteados:</h3>
+    <ul id="chosenList"></ul>
+  </div>
+  <canvas id="rouletteCanvas" width="500" height="500"></canvas>
+
+  <script>
+    let names = [];
+    let chosen = [];
+
+    function loadNames() {
+      const count = parseInt(document.getElementById("count").value);
+      const inputsDiv = document.getElementById("inputs");
+      inputsDiv.innerHTML = "";
+      names = [];
+
+      const stored = localStorage.getItem("rouletteNames_" + count);
+      let savedNames = stored ? JSON.parse(stored) : [];
+
+      for (let i = 0; i < count; i++) {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.placeholder = "Nombre " + (i + 1);
+        input.value = savedNames[i] || "";
+        input.dataset.index = i;
+        input.oninput = () => {
+          names[i] = input.value.trim();
+          drawRoulette();
+        };
+        inputsDiv.appendChild(input);
+        names.push(input.value.trim());
+      }
+
+      chosen = [];
+      updateChosenList();
+      drawRoulette();
+    }
+
+    function saveNames() {
+      const count = parseInt(document.getElementById("count").value);
+      const filledNames = names.filter(n => n.trim().length > 0);
+      if (filledNames.length < count) {
+        alert("Completá todos los nombres antes de guardar.");
+        return;
+      }
+      localStorage.setItem("rouletteNames_" + count, JSON.stringify(names));
+      alert("Nombres guardados.");
+      drawRoulette();
+    }
+
+    function updateChosenList() {
+      const list = document.getElementById("chosenList");
+      list.innerHTML = "";
+      chosen.forEach(n => {
+        const li = document.createElement("li");
+        li.textContent = n;
+        list.appendChild(li);
+      });
+    }
+
+    function getColor(index, total) {
+      const hue = (index / total) * 360;
+      return `hsl(${hue}, 70%, 70%)`;
+    }
+
+    function drawRoulette(highlightName = null) {
+      const canvas = document.getElementById("rouletteCanvas");
+      const ctx = canvas.getContext("2d");
+      const filtered = names.filter(n => !chosen.includes(n));
+      const total = filtered.length;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (total === 0) return;
+
+      const radius = canvas.width / 2;
+      const center = { x: radius, y: radius };
+      const angleStep = (2 * Math.PI) / total;
+
+      filtered.forEach((name, i) => {
+        const angle = i * angleStep;
+        ctx.beginPath();
+        ctx.moveTo(center.x, center.y);
+        ctx.arc(center.x, center.y, radius, angle, angle + angleStep);
+        ctx.fillStyle = getColor(i, total);
+        ctx.fill();
+        ctx.stroke();
+
+        // Text
+        ctx.save();
+        ctx.translate(center.x, center.y);
+        ctx.rotate(angle + angleStep / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = name === highlightName ? "red" : "#000";
+        ctx.font = "bold 18px sans-serif";
+        ctx.fillText(name, radius - 15, 8);
+        ctx.restore();
+      });
+    }
+
+    function spinRoulette() {
+      const available = names.filter(n => !chosen.includes(n));
+      if (available.length === 0) {
+        alert("Ya se sortearon todos.");
+        return;
+      }
+
+      const canvas = document.getElementById("rouletteCanvas");
+      const total = available.length;
+      let index = Math.floor(Math.random() * total);
+      let selectedName = available[index];
+
+      let rotation = 0;
+      let steps = 20;
+      let speed = 100;
+
+      const spin = setInterval(() => {
+        rotation += 1;
+        drawRoulette(available[(index + rotation) % total]);
+        steps--;
+        if (steps <= 0) {
+          clearInterval(spin);
+          chosen.push(selectedName);
+          updateChosenList();
+		drawRoulette();
+		launchConfetti();
+		showWinnerPopup(selectedName);
+        }
+      }, speed);
+    }
+
+    function launchConfetti() {
+      const duration = 1 * 1000;
+      const end = Date.now() + duration;
+
+      (function frame() {
+        confetti({
+          particleCount: 5,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+        });
+        confetti({
+          particleCount: 5,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+        });
+
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      })();
+    }
+
+    const confettiScript = document.createElement("script");
+    confettiScript.src = "https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js";
+    document.body.appendChild(confettiScript);
+	
+	function showWinnerPopup(name) {
+	  document.getElementById("winnerName").textContent = name;
+	  document.getElementById("winnerPopup").style.display = "flex";
+	}
+
+	function closeWinnerPopup() {
+	  document.getElementById("winnerPopup").style.display = "none";
+	}
+  </script>
+</body>
+</html>
