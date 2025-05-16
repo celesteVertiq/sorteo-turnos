@@ -220,24 +220,25 @@
   }
 
   // Función para girar la ruleta y elegir un ganador
-  function spinRoulette() {
-    const remaining = names.filter(n => !chosen.includes(n));
-    if (remaining.length === 0) {
-      alert("Ya se han seleccionado todos los participantes.");
-      return;
-    }
-
-    const winner = remaining[Math.floor(Math.random() * remaining.length)];
-    chosen.push(winner);
-
-    currentHighlightedName = winner;
-    drawRoulette();
-
-    launchConfetti();
-
-    winnerNameDiv.textContent = winner;
-    winnerPopup.style.display = "block";
+function spinRoulette() {
+  const remaining = names.filter(n => !chosen.includes(n));
+  if (remaining.length === 0) {
+    alert("Ya se han seleccionado todos los participantes.");
+    return;
   }
+
+  const winner = remaining[Math.floor(Math.random() * remaining.length)];
+  chosen.push(winner);
+
+  currentHighlightedName = winner;
+  drawRoulette();
+
+  launchConfetti();
+
+  winnerNameDiv.textContent = winner;
+  winnerPopup.style.display = "block";
+}
+
 
   // Cerrar popup
   function closeWinnerPopup() {
