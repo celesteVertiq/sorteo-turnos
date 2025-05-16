@@ -228,31 +228,24 @@
     });
   }
 
-    function spinRoulette() {
-      const remaining = names.filter(n => !chosen.includes(n));
-      if (remaining.length === 0) return;
-    
-      const winner = remaining[Math.floor(Math.random() * remaining.length)];
-      chosen.push(winner);
-    
-      currentHighlightedName = winner;
-      drawRoulette();
-    
-      // Lanzar confeti
-      if (!window.confettiInstance) {
-        window.confettiInstance = confetti.create(document.getElementById("rouletteCanvas"), { resize: true });
-      }
-      window.confettiInstance({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
-    
-      // Mostrar popup
-      document.getElementById("winnerName").textContent = winner;
-      document.getElementById("winnerPopup").style.display = "block";
-    }
+function spinRoulette() {
+  const remaining = names.filter(n => !chosen.includes(n));
+  if (remaining.length === 0) {
+    alert("Ya se han seleccionado todos los participantes.");
+    return;
+  }
 
+  const winner = remaining[Math.floor(Math.random() * remaining.length)];
+  chosen.push(winner);
+
+  currentHighlightedName = winner;
+  drawRoulette();
+
+  launchConfetti();
+
+  document.getElementById("winnerName").textContent = winner;
+  document.getElementById("winnerPopup").style.display = "block";
+}
 
 function launchConfetti() {
   const duration = 1000; // 1 segundo de confeti
