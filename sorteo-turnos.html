@@ -130,6 +130,7 @@
   </div>
 
   <script>
+    let currentHighlightedName = null;
     let names = [];
     let chosen = [];
 
@@ -188,13 +189,12 @@
       return `hsl(${hue}, 70%, 70%)`;
     }
 
-  function drawRoulette(highlightName = null) {
+  function drawRoulette() {
     const canvas = document.getElementById("rouletteCanvas");
     const ctx = canvas.getContext("2d");
     const filtered = names.filter(n => !chosen.includes(n));
     const total = filtered.length;
   
-    // LIMPIA todo el canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.beginPath();
     ctx.fillStyle = "#fff";
@@ -217,49 +217,42 @@
       ctx.strokeStyle = "#fff";
       ctx.stroke();
   
-      // Texto
       ctx.save();
       ctx.translate(center.x, center.y);
       ctx.rotate(angle + angleStep / 2);
       ctx.textAlign = "right";
-      ctx.fillStyle = name === highlightName ? "red" : "#000";
+      ctx.fillStyle = name === currentHighlightedName ? "red" : "#000";
       ctx.font = "bold 18px sans-serif";
       ctx.fillText(name, radius - 20, 8);
       ctx.restore();
     });
   }
 
-
     function spinRoulette() {
-      const available = names.filter(n => !chosen.includes(n));
-      if (available.length === 0) {
-        alert("Ya se sortearon todos.");
-        return;
+      const remaining = names.filter(n => !chosen.includes(n));
+      if (remaining.length === 0) return;
+    
+      const winner = remaining[Math.floor(Math.random() * remaining.length)];
+      chosen.push(winner);
+    
+      currentHighlightedName = winner;
+      drawRoulette();
+    
+      // Lanzar confeti
+      if (!window.confettiInstance) {
+        window.confettiInstance = confetti.create(document.getElementById("rouletteCanvas"), { resize: true });
       }
-
-      const canvas = document.getElementById("rouletteCanvas");
-      const total = available.length;
-      let index = Math.floor(Math.random() * total);
-      let selectedName = available[index];
-
-      let rotation = 0;
-      let steps = 20;
-      let speed = 100;
-
-      const spin = setInterval(() => {
-        rotation += 1;
-        drawRoulette(available[(index + rotation) % total]);
-        steps--;
-        if (steps <= 0) {
-          clearInterval(spin);
-          chosen.push(selectedName);
-          updateChosenList();
-          drawRoulette();
-          launchConfetti();
-          showWinnerPopup(selectedName);
-        }
-      }, speed);
+      window.confettiInstance({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    
+      // Mostrar popup
+      document.getElementById("winnerName").textContent = winner;
+      document.getElementById("winnerPopup").style.display = "block";
     }
+
 
     function launchConfetti() {
       const duration = 1 * 1000;
@@ -292,7 +285,12 @@
 
     function closeWinnerPopup() {
       document.getElementById("winnerPopup").style.display = "none";
-      drawRoulette(); // Redibuja la ruleta sin nombre resaltado
+      currentHighlightedName = null; // Limpia el nombre resaltado
+      drawRoulette(); // Redibuja sin resaltar
+      // Detenemos el confeti si está corriendo
+      if (window.confettiInstance) {
+        window.confettiInstance.reset(); // Esto detiene los emitters
+      }
     }
 
     // Cargar confetti
